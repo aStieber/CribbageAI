@@ -32,7 +32,7 @@ class Hand(object):
 
 	def printHand(self):
 		if (self.averageScore):
-			print("Average Score: ", self.averageScore)
+			print("Average Score: %.2f" % self.averageScore)
 		if (self.bigHand):
 			print("bigHand:")
 			for x in self.bigHand:
