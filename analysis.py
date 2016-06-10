@@ -1,14 +1,14 @@
 import sys, os, math, random, itertools, bicycle, statistics
 
 class handPhase():
-	def __init__(self, testing):
+	def __init__(self, argv):
 		self.deck = []
 		self.myHand = bicycle.Hand()
 		self.cut = bicycle.Card()
 		#testing
-		if (testing):
-			self.genState()
-		else: getBoard()
+		if argv: pass
+			
+		else: self.genState()
 
 		self.analyzeHand()
 
@@ -61,40 +61,51 @@ class handPhase():
 		
 		#run check
 		for cut in self.deck:
-			tmpScore = self.runCheck(potentialHand, cut)
-			# tmpScore += self.fifteenCheck(potentialHand, cut)
-			# tmpScore += self.multiplesCheck(potentialHand, cut)
-			# tmpScore += self.nobsCheck(potentialHand, cut)
-			# tmpScore += self.flushCheck(potentialHand, cut)
+			#create the full hand
+			fiveHand = bicycle.Hand()
+			for x in potentialHand.idealHand:
+				fiveHand.bigHand.append(x)
+			fiveHand.bigHand.append(cut)
+			fiveHand.handSort()
+
+			tmpScore = self.runCheck(fiveHand)
+			tmpScore += self.fifteenCheck(fiveHand)
+			# tmpScore += self.multiplesCheck(fiveHand)
+			# tmpScore += self.nobsCheck(fiveHand)
+			# tmpScore += self.flushCheck(fiveHand)
 			scores.append(tmpScore)
-
-
 
 		return(statistics.mean(scores))
 		
 
-	def runCheck(self, potentialHand, cut): #size 4 hand
+	def runCheck(self, fHand): #size 4 hand
 		currentRunLength = 0
-		fiveHand = bicycle.Hand()
-		for x in potentialHand.idealHand:
-			fiveHand.bigHand.append(x)
-		fiveHand.bigHand.append(cut)
-		fiveHand.handSort()
+		
 		counter = -1
 		#cycle through remaining deck, calculate the deck with the highest average score.
 		while (True):
 			if (currentRunLength == 5 or counter == -5):
 				break
-			elif (fiveHand.bigHand[counter].value == (fiveHand.bigHand[counter - 1].value + 1)): #if last item is 1 larger than previous'
+			elif (fHand.bigHand[counter].value == (fHand.bigHand[counter - 1].value + 1)): #if last item is 1 larger than previous
+				if ((counter <= -4) and (fHand.bigHand[counter].value != (fHand.bigHand[counter + 1].value - 1))):
+					break#check against 87643 counting as 4 points
+
 				currentRunLength += 1
 				counter -= 1
-			elif (currentRunLength >= 3):
-				break
 			else:
 				counter -= 1
 		#current run length is longest run
 		if (currentRunLength >= 3): return (currentRunLength)
 		else: return(0)
+
+	def fifteenCheck(self, fHand):
+		score = 0
+		perms = itertools.combinations(range(5), 5)
+
+		for arr in perms:
+			
+
+		return(score)
 				
 
 
