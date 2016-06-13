@@ -7,15 +7,18 @@ class Card(object):
 		self.value = val
 		self.suit = sui
 		#Ace is 1, J is 11, Q is 12, K is 13
-		self.valChart = ["ERROR", "Ace", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King"]
+		self.valChart = [None, "Ace", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen", "King"]
 		#0: club, 1: spade, 2: diamond, 3: heart
-		self.suitChart = ["Clubs", "Spades", "Diamonds", "Hearts"]
+		self.suitChart = ["c", "s", "d", "h"]
 
 	def getGameValue(self): #score of the card. reduces jqk
 		tmpV = self.value
 		if (self.value > 10):
 			tmpV = 10
 		return(tmpV)
+
+	def getSuitChar(self):
+		return(self.suitChart[self.suit])
 
 	def printCard(self):
 		print(self.valChart[self.value], "of", self.suitChart[self.suit])
@@ -25,6 +28,8 @@ class Hand(object):
 		self.bigHand = []
 		self.idealHand = []
 		self.averageScore = 0
+		self.bestScore = 0
+		self.bestCut = Card()
 
 	def handSort(self):
 		self.bigHand.sort(key=lambda x: x.value)

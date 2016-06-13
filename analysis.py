@@ -1,21 +1,21 @@
 import sys, os, math, random, itertools, bicycle, statistics
 
 class handPhase():
-	def __init__(self, argv):
+	def __init__(self, _hand=None, _random=False):
 		self.deck = []
-		self.myHand = bicycle.Hand()
+		if (_hand):
+			self.myHand = _hand
+		else:
+			self.myHand = bicycle.Hand()
 		self.cut = bicycle.Card()
 
 		#perm array for fifteencheck
 		self.perms = [list(itertools.combinations(range(5), 2)), list(itertools.combinations(range(5), 3)), list(itertools.combinations(range(5), 4))]
 
 		#testing
-		if argv == 1:
-			pass
-		else: 
+		if (_random == True):
 			self.genState()
-
-		self.analyzeHand()
+			
 
 		
 	def genState(self): #create a deck and fill 2 hands, draw crib. Returns the cut.
@@ -34,27 +34,37 @@ class handPhase():
 		self.cut = self.deck.pop(random.randint(0, deckCount))
 
 
-	def analyzeHand(self): #calculate ideal cribbage hand
+	def analyze6Hand(self): #calculate ideal cribbage hand
 		#calculate max score of all possible hands
 		tmp4hands = []
-		self.myHand.printHand()
 		perms = list(itertools.combinations(self.myHand.bigHand, 4))
 		currentBestHand = [bicycle.Hand()]
 		for x in perms: #6 choose 2 means 15 possible arrangements
 			#sort from low to high
 			tmp4hands.append(bicycle.Hand())
 			tmp4hands[-1].idealHand = list(x)
-			tmp4hands[-1].averageScore = self.score(tmp4hands[-1])
+			scoreReport = self.score(tmp4hands[-1]) #(mean, bestScore, bestCard)
+			tmp4hands[-1].averageScore  = scoreReport[0]
+			tmp4hands[-1].bestScore  = scoreReport[1]
+			tmp4hands[-1].bestCut  = scoreReport[2]
 
 			if (tmp4hands[-1].averageScore > currentBestHand[0].averageScore): #if this hand is better than previous best, erase all and replace with this. Array must be cleared because best could contain multiple bests
-				currentBestHand = [tmp4hands[-1]]
-			elif (tmp4hands[-1].averageScore > currentBestHand[0].averageScore):
+				currentBestHand = [tmp4hands[-1]] #delete previous array and create new one with 1 item
+			elif (tmp4hands[-1].averageScore == currentBestHand[0].averageScore):
 				currentBestHand.append(tmp4hands[-1])
+		#end-for loop
+		#find a better way than the first in the array
+		if (len(currentBestHand) > 1):
+			print("more than one best hand")
+		self.myHand.idealHand = currentBestHand[0].idealHand
 
-		currentBestHand[0].printHand()
 
-		#decide ties in currentBestHand
-		#print state
+	def analyze4Hand(self): #calculate 4
+		scoreReport = self.score(self.myHand)
+		self.averageScore  = scoreReport[0]
+		self.bestScore  = scoreReport[1]
+		self.bestCut  = scoreReport[2]
+
 
 	
 	def score(self, potentialHand):
@@ -64,7 +74,9 @@ class handPhase():
 		#Nobs check (jack same suit as cut)
 		#Flush check
 		scores = []
-		
+		bScore = 0
+		bCut = Card()
+		bicycle
 		#run check
 		for cut in self.deck:
 			#create the full hand
@@ -81,11 +93,15 @@ class handPhase():
 			tmpScore += self.nobsCheck(potentialHand.idealHand, cut) 
 			tmpScore += self.flushCheck(potentialHand.idealHand, cut)
 			scores.append(tmpScore)
+			if (tmpScore > bScore):
+				bScore = tmpScore
+				bCut = cut
+
 
 		return(statistics.mean(scores))
 		
 
-	def runCheck(self, fHand): #size 4 hand
+	def runCheck(self, fHand): #size 5 hand
 		currentRunLength = 0
 		
 		counter = -1
@@ -132,6 +148,8 @@ class handPhase():
 	def flushCheck(self, fourHand, cut): #A four-card flush occurs when all of the cards in a player's hand are the same suit and the start card is a different suit. In the crib, a four-card flush scores no points. A five-card flush scores five points.
 		if (fourHand[0].suit == fourHand[1].suit == fourHand[2].suit == fourHand[3].suit):
 			if (fourHand[0].suit == cut.suit):
+				print("5 flush")
 				return(5)
+			print("4 flush")
 			return(4)
 		return(0)
