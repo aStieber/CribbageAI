@@ -24,17 +24,23 @@ def addCard(event):
 			cardEntryWidget.select_range(0, END)
 			print("invalid character")
 
-def calcUserEntry():
-	if (len(varHand.rawHand) == 4):
+def calcCardDisplay():
+	enabledCards = 0
+	for card in varHand.rawHand:
+		if not card.disabled:
+			enabledCards += 1
+	if (enabledCards == 4):
 		hPhase = analysis.handPhase(varHand)
 		hPhase.analyze4Hand()
 		updateTextOutput(hPhase)
-	elif (len(varHand.rawHand) == 6):
+	elif (enabledCards == 6):
 		hPhase = analysis.handPhase(varHand)
 		hPhase.analyze6Hand()
 		updateTextOutput(hPhase)
+		varHand.rawHand
 	else:
-		print("Yo you need 4 or 6 cards, you have %i cards" % len(varHand.rawHand))
+		textOutput.set("")
+		#print("you need 4 or 6 cards, you have %i cards" % len(varHand.rawHand))
 
 def updateTextOutput(hPhase):
 	tmpText = "Average Score: %.2f\nBest Score: %i\n" % (hPhase.averageScore, hPhase.bestScore)
@@ -51,7 +57,6 @@ def duplicateCheck(card, hand):
 def calcRandomEntry(num):
 	global varHand, cards
 	varHand = bicycle.Hand()
-	cards = [None] * 6
 	counter = 0
 	while counter < num:
 		tmpCard = bicycle.Card(_value=random.randint(1, 13), _suit=random.randint(0, 3))
@@ -60,43 +65,60 @@ def calcRandomEntry(num):
 			cardEntryWidget.delete(0, END) #erase text box
 			counter += 1
 
-def getImageFilename(card):
-	x = "%s/gif/%s%02d.gif" % (os.getcwd(), card.getSuitChar(), card.value)
-	return(x)
-
-
 def updateCards(): #first, populate with all 6, then dim those who aren't the best (if known)
-	cardID = [None] * 6
+	tmp = []
+	yLoc = 20
 	count = 0
 	for x in varHand.rawHand:
-		xLoc = 60 + 110 * count #yLoc is 160
-		if cards[count]:
-			f = cards[count]
-		else:
-			f = PhotoImage(file=getImageFilename(x))
-
-		cardID[count] = cardDisplay.create_image(xLoc, 90, image=f)
-		cards[count] = f
-	
+		xLoc = 14 + 110 * count 
 		count += 1
+		if not x.imageExists:
+			x.createImage(xLoc, yLoc)
+		cardDisplay.create_image(xLoc, yLoc, image=x.imageObj.image, anchor='nw')
 
+		if x.disabled:
+			tmp.append(cardDisplay.create_rectangle(xLoc, yLoc, x.imageObj.width + xLoc, x.imageObj.height + yLoc, stipple='gray75', fill='#000000'))
+
+def cardClick(event, card):
+	if event.x >= card.imageObj.x and event.x <= (card.imageObj.x + card.imageObj.width):
+		if event.y >= card.imageObj.y and event.y <= (card.imageObj.y + card.imageObj.height):
+			return(True)
+	return(False)
+
+def __toggleCardEnable(event):
+	for card in varHand.rawHand:
+		#cardDisplay.create_oval(event.x-r, event.y-r, event.x+r, event.y+r, fill='orange')
+		if cardClick(event, card):
+			#card was clicked
+			card.disabled = not card.disabled
+
+def __removeCard(event):
+	removed = False
+	for card in varHand.rawHand[:]:
+		if cardClick(event, card):
+			varHand.rawHand.remove(card)
+			removed = True
+	if removed:
+		for card in varHand.rawHand:
+			card.imageObj = None
+			card.imageExists = False
 
 def update():
 	updateCards()
-	#cardDisplay.update()
-	root.update_idletasks()
-	root.after(500, update)
+	calcCardDisplay()
+	root.after(200, update)
 
 
 
-
+#__main__
 root = Tk()
 #root.geometry("720x560")
 varHand = bicycle.Hand()
 hPhase = analysis.handPhase()
+handChanged = False
 userInput = StringVar()
-cards = [None] * 6 #keeps images on the canvas, needs to be here
 textOutput = StringVar()
+
 
 
 Label(root, text="Enter Cards\n(JH is Jack of Hearts)").grid(row=0, column=0)
@@ -105,13 +127,15 @@ cardEntryWidget = Entry(root, width=4, textvariable=userInput)
 cardEntryWidget.grid(row=1, column=0) #this returns None
 root.bind('<Return>', addCard)
 
-Button(root, text="Find Best", command=calcUserEntry).grid(row=2, column=0)
+#Button(root, text="Find Best", command=calcUserEntry).grid(row=2, column=0)
 Button(root, text="Random 4", command=lambda: calcRandomEntry(4)).grid(row=0, column=1)
 Button(root, text="Random 6", command=lambda: calcRandomEntry(6)).grid(row=1, column=1)
 
 #card display
-cardDisplay = Canvas(root, width=720, height=180, bg='#084F3D')
+cardDisplay = Canvas(root, width=780, height=180, bg='#084F3D')
 cardDisplay.grid(row=5, rowspan=2, columnspan=5)
+cardDisplay.bind('<Button-1>', __toggleCardEnable)
+cardDisplay.bind('<Button-3>', __removeCard)
 
 statDisplay = Label(root, textvariable=textOutput).grid(row=0, column=2, rowspan=2, columnspan=2)
 
