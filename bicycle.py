@@ -40,7 +40,6 @@ class Card(object):
 			self.width = self.image.width()
 			self.height = self.image.height()
 			
-			
 		def getImageFilename(self):
 			x = "%s/gif/%s%02d.gif" % (os.getcwd(), self.card.getSuitChar(), self.card.value)
 			return(x)

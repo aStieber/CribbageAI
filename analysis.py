@@ -52,7 +52,6 @@ class handPhase():
 		if (len(currentBestHand) > 1):
 			print("more than one best hand")
 
-
 		for card in self.myHand.rawHand:
 			enable = False
 			for bc in currentBestHand[0].rawHand:
@@ -91,10 +90,8 @@ class handPhase():
 				fiveHand.rawHand.append(x)
 			fiveHand.rawHand.append(cut)
 			fiveHand.handSort()
-
-			tmpScore = self.runCheck(fiveHand)
+			tmpScore = self.runAndMultiplesCheck(fiveHand)
 			tmpScore += self.fifteenCheck(fiveHand)
-			tmpScore += self.multiplesCheck(fiveHand)
 			#These two are weird because scoring depends on which card is the cut. Thus, we have to pass in both.
 			tmpScore += self.nobsCheck(potentialHand.rawHand, cut) 
 			tmpScore += self.flushCheck(potentialHand.rawHand, cut)
@@ -105,24 +102,37 @@ class handPhase():
 		output = (statistics.mean(scores), bScore, bCut)
 		return(output)
 		
-	def runCheck(self, fHand): #size 5 hand
-		currentRunLength = 0
-		counter = -1
-		#cycle through remaining deck, calculate the deck with the highest average score.
-		while (True):
-			if (currentRunLength == 5 or counter == -5):
+	def runAndMultiplesCheck(self, fHand): #size 5 hand
+		multiples_score = 0
+		pairNumbers = []
+		#multiples
+		for x in self.perms[0]: #5 choose 2
+			if (fHand.rawHand[x[0]].value == fHand.rawHand[x[1]].value):
+				pairNumbers.append(fHand.rawHand[x[0]].value)
+				multiples_score += 2
+		#run
+		count = 0
+		run = []
+		run_score = 0
+		while count <= 3:
+			if not run:
+				run.append(fHand.rawHand[count].value)
+			elif run[-1] == fHand.rawHand[count + 1].value: #if equal, skip
+				count += 1
+			elif (run[-1] + 1) == fHand.rawHand[count + 1].value: #if 1 larger, add it to the run.
+				run.append(fHand.rawHand[count + 1].value)
+				count += 1
+			elif len(run) >= 3:
 				break
-			elif (fHand.rawHand[counter].value == (fHand.rawHand[counter - 1].value + 1)): #if last item is 1 larger than previous
-				if ((counter <= -4) and (fHand.rawHand[counter].value != (fHand.rawHand[counter + 1].value - 1))):
-					break#check against 87643 counting as 4 points
-
-			currentRunLength += 1
-			counter -= 1
-		else:
-				counter -= 1
-		#current run length is longest run
-		if (currentRunLength >= 3): return (currentRunLength)
-		else: return(0)
+			else: 
+				run = []
+				count += 1
+		if len(run) >= 3:
+			run_score = len(run)
+			for p in pairNumbers:
+				if p in run:
+					run_score *= 2
+		return(multiples_score+run_score )
 
 	def fifteenCheck(self, fHand):#cards are in fHand.rawHand
 		score = 0
@@ -133,13 +143,6 @@ class handPhase():
 					tmpCount += fHand.rawHand[num].getGameValue()
 				if (tmpCount == 15):
 					score += 2
-		return(score)
-
-	def multiplesCheck(self, fHand):
-		score = 0
-		for x in self.perms[0]: #5 choose 2
-			if (fHand.rawHand[x[0]].value == fHand.rawHand[x[1]].value):
-				score += 2
 		return(score)
 
 	def nobsCheck(self, fourHand, cut): #this one is weird because it requires a hand card match a cut

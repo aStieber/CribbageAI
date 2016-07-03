@@ -23,6 +23,7 @@ def addCard(event):
 		except (ValueError, KeyError):
 			cardEntryWidget.select_range(0, END)
 			print("invalid character")
+	setHandChanged(True)
 
 def calcCardDisplay():
 	enabledCards = 0
@@ -55,7 +56,7 @@ def duplicateCheck(card, hand):
 	return(duplicateCard)
 
 def calcRandomEntry(num):
-	global varHand, cards
+	global varHand
 	varHand = bicycle.Hand()
 	counter = 0
 	while counter < num:
@@ -64,6 +65,7 @@ def calcRandomEntry(num):
 			varHand.rawHand.append(tmpCard)
 			cardEntryWidget.delete(0, END) #erase text box
 			counter += 1
+	setHandChanged(True)
 
 def updateCards(): #first, populate with all 6, then dim those who aren't the best (if known)
 	tmp = []
@@ -91,6 +93,7 @@ def __toggleCardEnable(event):
 		if cardClick(event, card):
 			#card was clicked
 			card.disabled = not card.disabled
+	setHandChanged(True)
 
 def __removeCard(event):
 	removed = False
@@ -102,11 +105,22 @@ def __removeCard(event):
 		for card in varHand.rawHand:
 			card.imageObj = None
 			card.imageExists = False
+	setHandChanged(True)
+
+def getHandChanged():
+	global handChanged
+	return(handChanged)
+
+def setHandChanged(setValue):
+	global handChanged
+	handChanged = setValue
 
 def update():
-	updateCards()
-	calcCardDisplay()
-	root.after(200, update)
+	if getHandChanged():
+		updateCards()
+		calcCardDisplay()
+		setHandChanged(False)
+	root.after(20, update)
 
 
 
